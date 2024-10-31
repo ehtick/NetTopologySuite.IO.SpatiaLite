@@ -21,12 +21,12 @@ jobs:
 
     steps:
     - name: Get source
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 3.1.x
+        dotnet-version: 8.0.x
 
     - name: Install mod_spatialite (Linux)
       if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -51,7 +51,7 @@ jobs:
       run: dotnet pack -c Release --no-build -o artifacts -p:NoWarn=NU5105
 
     - name: Upload
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: NuGet Package Files (${{ matrix.os }})
         path: artifacts
