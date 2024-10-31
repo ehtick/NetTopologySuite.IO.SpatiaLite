@@ -68,25 +68,9 @@ namespace NetTopologySuite.IO
             using (var writer = new BinaryWriter(stream))
             {
                 int byteOrder = (int)ByteOrder.LittleEndian;
-                int ordinates = 0;
-                switch (HandleOrdinates)
-                {
-                    case Ordinates.None:
-                        ordinates = 0;
-                        break;
-                    case Ordinates.XY:
-                        ordinates = 1;
-                        break;
-                    case Ordinates.XYZ:
-                        ordinates = 2;
-                        break;
-                    case Ordinates.XYM:
-                        ordinates = 3;
-                        break;
-                    case Ordinates.XYZM:
-                        ordinates = 4;
-                        break;
-                }
+                
+                int ordinates = GetExtentOrdinates(geom);
+
                 int isEmpty = geom.IsEmpty ? 1 : 0;
                 byte flags = (byte)(byteOrder + (ordinates << 1) + (isEmpty << 4));
                 var header = new GeoPackageBinaryHeader
@@ -117,12 +101,32 @@ namespace NetTopologySuite.IO
                 }
 
                 // NOTE: GeoPackage handles SRID in its own header.  It would be invalid here.
-                const bool dontHandleSRID = false;
-                var wkbWriter = new WKBWriter(ByteOrder.LittleEndian, dontHandleSRID, emitZ, emitM);
+                const bool handleSRID = false;
+                var wkbWriter = new WKBWriter(ByteOrder.LittleEndian, handleSRID, emitZ, emitM);
                 wkbWriter.Write(geom, stream);
             }
         }
 
+        private int GetExtentOrdinates(Geometry geom)
+        {
+            if (geom.IsEmpty || geom.OgcGeometryType == OgcGeometryType.Point)
+                return 0;
+
+            switch (HandleOrdinates)
+            {
+                case Ordinates.XY:
+                    return 1;
+                case Ordinates.XYZ:
+                    return 2;
+                case Ordinates.XYM:
+                    return 3;
+                case Ordinates.XYZM:
+                    return 4;
+            }
+
+            return 0;
+        }
+        
         /// <summary>
         /// Serializes a given <see cref="Geometry"/> to a new byte array.
         /// </summary>
