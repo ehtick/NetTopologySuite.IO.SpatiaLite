@@ -1,13 +1,13 @@
+using System;
+using System.Configuration;
+using System.Data;
+using System.IO;
+using NetTopologySuite.Geometries;
+using NUnit.Framework;
+using Microsoft.Data.Sqlite;
+
 namespace NetTopologySuite.IO.SpatiaLite.Test
 {
-    using System;
-    using System.Configuration;
-    using System.Data;
-    using System.Data.SQLite;
-    using System.IO;
-    using NetTopologySuite.Geometries;
-    using NUnit.Framework;
-
     [NUnit.Framework.TestFixture]
     [NUnit.Framework.Category("Database.IO")]
     public class SpatiaLiteFixture : AbstractIOFixture
@@ -40,7 +40,7 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
             if (File.Exists(Name))
                 File.Delete(Name);
 
-            using var conn = new SQLiteConnection("Data Source=\"" + Name + "\"");
+            using var conn = new SqliteConnection("Data Source=\"" + Name + "\"");
             conn.Open();
             conn.EnableExtensions(true);
             SpatialiteLoader.Load(conn);
@@ -86,17 +86,17 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
 
             byte[] b = writer.Write(gIn);
 
-            using var conn = new SQLiteConnection("Data Source=\"" + Name + "\"");
+            using var conn = new SqliteConnection("Data Source=\"" + Name + "\"");
             conn.Open();
             conn.EnableExtensions(true);
             SpatialiteLoader.Load(conn);
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "INSERT INTO \"nts_io_spatialite\" VALUES(@id, @g);";
-            var idParameter = cmd.Parameters.Add("id", DbType.Int32);
+            var idParameter = cmd.Parameters.Add("id", SqliteType.Integer);
             idParameter.Value = ++_counter;
 
-            var geometryParameter = cmd.Parameters.Add("g", DbType.Object);
+            var geometryParameter = cmd.Parameters.Add("g", SqliteType.Blob);
             geometryParameter.Value = b;
 
             cmd.ExecuteNonQuery();

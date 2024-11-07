@@ -1,8 +1,8 @@
 ﻿using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Implementation;
 using NUnit.Framework;
+using Microsoft.Data.Sqlite;
 using System;
-using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 
@@ -18,14 +18,14 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
         [TearDown]
         public virtual void OnFixtureTearDown() { }
 
-        private static void DoTest(Action<SQLiteConnection> action)
+        private static void DoTest(Action<SqliteConnection> action)
         {
             Assert.IsNotNull(action);
 
             string fileName = $"{Guid.NewGuid().ToString()}.gpkg";
             File.Copy("empty.gpkg", fileName);
             string cs = $"Data Source={fileName};Version=3;";
-            using (var conn = new SQLiteConnection(cs))
+            using (var conn = new SqliteConnection(cs))
             {
                 conn.Open();
 

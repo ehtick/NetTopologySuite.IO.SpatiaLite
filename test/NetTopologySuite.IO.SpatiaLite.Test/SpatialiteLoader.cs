@@ -5,13 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyModel;
 
 using RuntimeEnvironment = Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironment;
@@ -56,7 +55,7 @@ namespace NetTopologySuite.IO.SpatiaLite
         {
             FindExtension();
 
-            if (connection is SQLiteConnection sqliteConnection)
+            if (connection is SqliteConnection sqliteConnection)
             {
                 sqliteConnection.LoadExtension("mod_spatialite");
             }

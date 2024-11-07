@@ -1,9 +1,9 @@
 using System;
 using System.Configuration;
-using System.Data.SQLite;
 using System.IO;
 using NetTopologySuite.Geometries;
 using NUnit.Framework;
+using Microsoft.Data.Sqlite;
 
 namespace NetTopologySuite.IO.SpatiaLite.Test
 {
@@ -41,7 +41,7 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
             if (File.Exists(Name))
                 File.Delete(Name);
 
-            using var conn = new SQLiteConnection("Data Source=\"" + Name + "\"");
+            using var conn = new SqliteConnection("Data Source=\"" + Name + "\"");
             conn.Open();
             conn.EnableExtensions(true);
             SpatialiteLoader.Load(conn);
