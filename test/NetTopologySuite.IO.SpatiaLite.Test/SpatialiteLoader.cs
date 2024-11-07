@@ -13,7 +13,7 @@ using System.Threading;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyModel;
 
-using RuntimeEnvironment = Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironment;
+//using RuntimeEnvironment = Microsoft.DotNet.PlatformAbstractions.RuntimeEnvironment;
 
 namespace NetTopologySuite.IO.SpatiaLite
 {
@@ -88,7 +88,7 @@ namespace NetTopologySuite.IO.SpatiaLite
             if (hasDependencyContext)
             {
                 var candidateAssets = new Dictionary<(string, string), int>();
-                var rid = RuntimeEnvironment.GetRuntimeIdentifier();
+                string rid = RuntimeInformation.RuntimeIdentifier;
                 var rids = DependencyContext.Default.RuntimeGraph.FirstOrDefault(g => g.Runtime == rid)?.Fallbacks.ToList()
                     ?? new List<string>();
                 rids.Insert(0, rid);
@@ -104,7 +104,7 @@ namespace NetTopologySuite.IO.SpatiaLite
                                 "mod_spatialite" + _sharedLibraryExtension,
                                 StringComparison.OrdinalIgnoreCase))
                             {
-                                var fallbacks = rids.IndexOf(group.Runtime);
+                                int fallbacks = rids.IndexOf(group.Runtime);
                                 if (fallbacks != -1)
                                 {
                                     candidateAssets.Add((library.Path, file.Path), fallbacks);
@@ -129,12 +129,11 @@ namespace NetTopologySuite.IO.SpatiaLite
                     else
                     {
                         string assetFullPath = null;
-                        var probingDirectories = ((string)AppDomain.CurrentDomain.GetData("PROBING_DIRECTORIES"))
+                        string[] probingDirectories = ((string)AppDomain.CurrentDomain.GetData("PROBING_DIRECTORIES"))
                             .Split(Path.PathSeparator);
-                        foreach (var directory in probingDirectories)
+                        foreach (string directory in probingDirectories)
                         {
-                            var candidateFullPath = Path.Combine(
-                                directory,
+                            string candidateFullPath = Path.Combine(directory,
                                 (assetPath.Item1 + "/" + assetPath.Item2).Replace('/', Path.DirectorySeparatorChar));
                             if (File.Exists(candidateFullPath))
                             {
@@ -152,8 +151,8 @@ namespace NetTopologySuite.IO.SpatiaLite
                     // GetEnvironmentVariable can sometimes return null when there is a race condition
                     // with another thread setting it. Therefore we do a bit of back off and retry here.
                     // Note that the result can be null if no path is set on the system.
-                    var delay = 1;
-                    var currentPath = Environment.GetEnvironmentVariable(_pathVariableName);
+                    int delay = 1;
+                    string currentPath = Environment.GetEnvironmentVariable(_pathVariableName);
                     while (currentPath == null && delay < 1000)
                     {
                         Thread.Sleep(delay);

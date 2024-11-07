@@ -20,11 +20,11 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
 
         private static void DoTest(Action<SqliteConnection> action)
         {
-            Assert.IsNotNull(action);
+            Assert.That(action, Is.Not.Null);
 
-            string fileName = $"{Guid.NewGuid().ToString()}.gpkg";
+            string fileName = $"{Guid.NewGuid()}.gpkg";
             File.Copy("empty.gpkg", fileName);
-            string cs = $"Data Source={fileName};Version=3;";
+            string cs = $"Data Source={fileName}";
             using (var conn = new SqliteConnection(cs))
             {
                 conn.Open();
@@ -35,6 +35,7 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
 
                 action(conn);
             }
+            //File.Delete(fileName);
         }
 
         [Test]
@@ -55,7 +56,7 @@ VALUES (1, gpkgMakePoint(@px, @py, 4326));";
                     cmd.Parameters.AddWithValue("px", coord.X);
                     cmd.Parameters.AddWithValue("py", coord.Y);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -67,17 +68,17 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader();
                         var geom = reader.Read(blob);
-                        Assert.IsNotNull(geom);
-                        Assert.IsInstanceOf<Point>(geom);
-                        Assert.AreEqual(point, geom);
-                        Assert.IsTrue(point.EqualsExact(geom));
-                        Assert.AreEqual(coord, geom.Coordinate);
-                        Assert.IsTrue(coord.Equals(geom.Coordinate));
-                        Assert.IsNaN(geom.Coordinate.Z);
+                        Assert.That(geom, Is.Not.Null);
+                        Assert.That(geom, Is.InstanceOf<Point>());
+                        Assert.That(geom, Is.EqualTo(geom));
+                        Assert.That(point.EqualsExact(geom));
+                        Assert.That(geom.Coordinate, Is.EqualTo(coord));
+                        Assert.That(coord.Equals(geom.Coordinate));
+                        Assert.That(double.IsNaN(geom.Coordinate.Z));
                     }
                 }
             });
@@ -109,7 +110,7 @@ VALUES (1, @pbytes);";
                     byte[] bytes = writer.Write(point);
                     cmd.Parameters.AddWithValue("pbytes", bytes);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -125,20 +126,20 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader
                         {
                             HandleOrdinates = Ordinates.XY
                         };
                         var geom = reader.Read(blob);
-                        Assert.AreEqual(point, geom);
-                        Assert.AreEqual(point.AsBinary(), geom.AsBinary());
-                        Assert.IsFalse(rdr.GetBoolean(1));
-                        Assert.IsFalse(rdr.GetBoolean(2));
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(geom.AsBinary(), Is.EqualTo(point.AsBinary()));
+                        Assert.That(!rdr.GetBoolean(1));
+                        Assert.That(!rdr.GetBoolean(2));
                         string wkt = rdr.GetString(3);
-                        Assert.IsFalse(string.IsNullOrEmpty(wkt));
-                        Assert.AreEqual("POINT(11.11 22.22)", wkt);
+                        Assert.That(!string.IsNullOrEmpty(wkt));
+                        Assert.That(wkt, Is.EqualTo("POINT(11.11 22.22)"));
                     }
                 }
             });
@@ -163,7 +164,7 @@ VALUES (1, gpkgMakePointZ(@px, @py, @pz, 4326));";
                     cmd.Parameters.AddWithValue("py", coord.Y);
                     cmd.Parameters.AddWithValue("pz", coord.Z);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -175,20 +176,20 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader();
                         var geom = reader.Read(blob);
-                        Assert.IsNotNull(geom);
-                        Assert.IsInstanceOf<Point>(geom);
-                        Assert.AreEqual(point, geom);
-                        Assert.IsTrue(point.EqualsExact(geom));
-                        Assert.AreEqual(coord, geom.Coordinate);
-                        Assert.IsTrue(coord.Equals(geom.Coordinate));
-                        Assert.IsInstanceOf<CoordinateZ>(geom.Coordinate);
+                        Assert.That(geom, Is.Not.Null);
+                        Assert.That(geom, Is.InstanceOf<Point>());
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(point.EqualsExact(geom));
+                        Assert.That(geom.Coordinate, Is.EqualTo(coord));
+                        Assert.That(coord.Equals(geom.Coordinate));
+                        Assert.That(geom.Coordinate, Is.InstanceOf<CoordinateZ>());
                         var coordZ = (CoordinateZ)geom.Coordinate;
-                        Assert.IsTrue(coord.Equals3D(coordZ));
-                        Assert.AreEqual(coord.Z, geom.Coordinate.Z);
+                        Assert.That(coord.Equals3D(coordZ));
+                        Assert.That(geom.Coordinate.Z, Is.EqualTo(coord.Z));
                     }
                 }
             });
@@ -217,7 +218,7 @@ VALUES (1, @pbytes);";
                     cmd.Parameters.AddWithValue("pbytes", bytes);
 
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -233,20 +234,20 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader
                         {
                             HandleOrdinates = Ordinates.XYZ
                         };
                         var geom = reader.Read(blob);
-                        Assert.AreEqual(point, geom);
-                        Assert.AreEqual(point.AsBinary(), geom.AsBinary());
-                        Assert.IsTrue(rdr.GetBoolean(1));
-                        Assert.IsFalse(rdr.GetBoolean(2));
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(geom.AsBinary(), Is.EqualTo(point.AsBinary()));
+                        Assert.That(rdr.GetBoolean(1));
+                        Assert.That(!rdr.GetBoolean(2));
                         string wkt = rdr.GetString(3);
-                        Assert.IsFalse(string.IsNullOrEmpty(wkt));
-                        Assert.AreEqual("POINT Z(11.11 22.22 33.33)", wkt);
+                        Assert.That(!string.IsNullOrEmpty(wkt));
+                        Assert.That(wkt, Is.EqualTo("POINT Z(11.11 22.22 33.33)"));
                     }
                 }
             });
@@ -262,8 +263,8 @@ WHERE [id] = 1;";
                 new[] { 44.44 });
             var factory = new GeometryFactory(sequenceFactory);
             var point = factory.CreatePoint(coordinateSequence);
-            Assert.AreEqual(0.0, point.Z);
-            Assert.AreEqual(44.44, point.M);
+            Assert.That(point.Z, Is.EqualTo(0.0));
+            Assert.That(point.M, Is.EqualTo(44.44));
 
             DoTest(conn =>
             {
@@ -278,7 +279,7 @@ VALUES (1, gpkgMakePointM(@px, @py, @pm, 4326));";
                     cmd.Parameters.AddWithValue("py", point.Y);
                     cmd.Parameters.AddWithValue("pm", point.M);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -290,18 +291,18 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader(sequenceFactory,
                             new PrecisionModel(PrecisionModels.Floating));
                         var geom = reader.Read(blob);
-                        Assert.IsNotNull(geom);
-                        Assert.IsInstanceOf<Point>(geom);
-                        Assert.AreEqual(point, geom);
-                        Assert.IsTrue(point.EqualsExact(geom));
-                        Assert.AreEqual(point.Coordinate, geom.Coordinate);
-                        Assert.IsTrue(point.Coordinate.Equals(geom.Coordinate));
-                        Assert.AreEqual(point.M, ((Point)geom).M);
+                        Assert.That(geom, Is.Not.Null);
+                        Assert.That(geom, Is.InstanceOf<Point>());
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(point.EqualsExact(geom));
+                        Assert.That(geom.Coordinate, Is.EqualTo(point.Coordinate));
+                        Assert.That(point.Coordinate.Equals(geom.Coordinate));
+                        Assert.That(((Point)geom).M, Is.EqualTo(point.M));
                     }
                 }
             });
@@ -317,8 +318,8 @@ WHERE [id] = 1;";
                 new[] { 44.44 });
             var factory = new GeometryFactory(sequenceFactory);
             var point = factory.CreatePoint(coordinateSequence);
-            Assert.AreEqual(0.0, point.Z);
-            Assert.AreEqual(44.44, point.M);
+            Assert.That(point.Z, Is.EqualTo(0.0));
+            Assert.That(point.M, Is.EqualTo(44.44));
 
             DoTest(conn =>
             {
@@ -336,7 +337,7 @@ VALUES (1, @pbytes);";
                     byte[] bytes = writer.Write(point);
                     cmd.Parameters.AddWithValue("pbytes", bytes);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -352,18 +353,18 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader(sequenceFactory,
                             new PrecisionModel(PrecisionModels.Floating));
                         var geom = reader.Read(blob);
-                        Assert.AreEqual(point, geom);
-                        Assert.AreEqual(point.AsBinary(), geom.AsBinary());
-                        Assert.IsFalse(rdr.GetBoolean(1));
-                        Assert.IsTrue(rdr.GetBoolean(2));
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(geom.AsBinary(), Is.EqualTo(point.AsBinary()));
+                        Assert.That(!rdr.GetBoolean(1));
+                        Assert.That(rdr.GetBoolean(2));
                         string wkt = rdr.GetString(3);
-                        Assert.IsFalse(string.IsNullOrEmpty(wkt));
-                        Assert.AreEqual("POINT M(11.11 22.22 44.44)", wkt);
+                        Assert.That(!string.IsNullOrEmpty(wkt));
+                        Assert.That(wkt, Is.EqualTo("POINT M(11.11 22.22 44.44)"));
                     }
                 }
             });
@@ -379,8 +380,8 @@ WHERE [id] = 1;";
                 new[] { 44.44 });
             var factory = new GeometryFactory(sequenceFactory);
             var point = factory.CreatePoint(coordinateSequence);
-            Assert.AreEqual(33.33, point.Z);
-            Assert.AreEqual(44.44, point.M);
+            Assert.That(point.Z, Is.EqualTo(33.33));
+            Assert.That(point.M, Is.EqualTo(44.44));
 
             DoTest(conn =>
             {
@@ -396,7 +397,7 @@ VALUES (1, gpkgMakePointZM(@px, @py, @pz, @pm, 4326));";
                     cmd.Parameters.AddWithValue("pz", point.Z);
                     cmd.Parameters.AddWithValue("pm", point.M);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -408,22 +409,22 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader(sequenceFactory,
                             new PrecisionModel(PrecisionModels.Floating));
                         var geom = reader.Read(blob);
-                        Assert.IsNotNull(geom);
-                        Assert.IsInstanceOf<Point>(geom);
-                        Assert.AreEqual(point, geom);
-                        Assert.IsTrue(point.EqualsExact(geom));
-                        Assert.AreEqual(point.Coordinate, geom.Coordinate);
-                        Assert.IsTrue(point.Coordinate.Equals(geom.Coordinate));
-                        Assert.IsInstanceOf<CoordinateZ>(geom.Coordinate);
+                        Assert.That(geom, Is.Not.Null);
+                        Assert.That(geom, Is.InstanceOf<Point>());
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(point.EqualsExact(geom));
+                        Assert.That(geom.Coordinate, Is.EqualTo(point.Coordinate));
+                        Assert.That(point.Coordinate.Equals(geom.Coordinate));
+                        Assert.That(geom.Coordinate, Is.InstanceOf<CoordinateZM>());
                         var coordZ = (CoordinateZ)geom.Coordinate;
-                        Assert.IsTrue(((CoordinateZ)point.Coordinate).Equals3D(coordZ));
-                        Assert.AreEqual(point.Z, ((Point)geom).Z);
-                        Assert.AreEqual(point.M, ((Point)geom).M);
+                        Assert.That(((CoordinateZ)point.Coordinate).Equals3D(coordZ));
+                        Assert.That(((Point)geom).Z, Is.EqualTo(point.Z));
+                        Assert.That(((Point)geom).M, Is.EqualTo(point.M));
                     }
                 }
             });
@@ -439,8 +440,8 @@ WHERE [id] = 1;";
                 new[] { 44.44 });
             var factory = new GeometryFactory(sequenceFactory);
             var point = factory.CreatePoint(coordinateSequence);
-            Assert.AreEqual(33.33, point.Z);
-            Assert.AreEqual(44.44, point.M);
+            Assert.That(point.Z, Is.EqualTo(33.33));
+            Assert.That(point.M, Is.EqualTo(44.44));
 
             DoTest(conn =>
             {
@@ -458,7 +459,7 @@ VALUES (1, @pbytes);";
                     byte[] bytes = writer.Write(point);
                     cmd.Parameters.AddWithValue("pbytes", bytes);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -474,18 +475,18 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader(sequenceFactory,
                             new PrecisionModel(PrecisionModels.Floating));
                         var geom = reader.Read(blob);
-                        Assert.AreEqual(point, geom);
-                        Assert.AreEqual(point.AsBinary(), geom.AsBinary());
-                        Assert.IsTrue(rdr.GetBoolean(1));
-                        Assert.IsTrue(rdr.GetBoolean(2));
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(geom.AsBinary(), Is.EqualTo(point.AsBinary()));
+                        Assert.That(rdr.GetBoolean(1));
+                        Assert.That(rdr.GetBoolean(2));
                         string wkt = rdr.GetString(3);
-                        Assert.IsFalse(string.IsNullOrEmpty(wkt));
-                        Assert.AreEqual("POINT ZM(11.11 22.22 33.33 44.44)", wkt);
+                        Assert.That(!string.IsNullOrEmpty(wkt));
+                        Assert.That(wkt, Is.EqualTo("POINT ZM(11.11 22.22 33.33 44.44)"));
                     }
                 }
             });
@@ -514,7 +515,7 @@ VALUES (1, @pbytes);";
                     byte[] bytes = writer.Write(point);
                     cmd.Parameters.AddWithValue("pbytes", bytes);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -530,16 +531,16 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader
                         {
                             HandleOrdinates = Ordinates.XY
                         };
                         var geom = reader.Read(blob);
-                        Assert.AreEqual(point, geom);
-                        Assert.AreNotEqual(point.SRID, geom.SRID);
-                        Assert.AreEqual(-1, geom.SRID);
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(geom.SRID, Is.Not.EqualTo(point.SRID));
+                        Assert.That(geom.SRID, Is.EqualTo(-1));
                     }
                 }
             });
@@ -568,7 +569,7 @@ VALUES (1, @pbytes);";
                     byte[] bytes = writer.Write(point);
                     cmd.Parameters.AddWithValue("pbytes", bytes);
                     int ret = cmd.ExecuteNonQuery();
-                    Assert.AreEqual(1, ret);
+                    Assert.That(ret, Is.EqualTo(1));
                 }
 
                 using (var cmd = conn.CreateCommand())
@@ -584,7 +585,7 @@ WHERE [id] = 1;";
                     cmd.CommandText = sql;
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        Assert.IsTrue(rdr.Read());
+                        Assert.That(rdr.Read());
                         byte[] blob = rdr.GetFieldValue<byte[]>(0);
                         var reader = new GeoPackageGeoReader
                         {
@@ -592,8 +593,8 @@ WHERE [id] = 1;";
                             HandleSRID = true
                         };
                         var geom = reader.Read(blob);
-                        Assert.AreEqual(point, geom);
-                        Assert.AreEqual(point.SRID, geom.SRID);
+                        Assert.That(geom, Is.EqualTo(point));
+                        Assert.That(geom.SRID, Is.EqualTo(point.SRID));
                     }
                 }
             });

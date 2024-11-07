@@ -16,9 +16,9 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
 
         private void AssertStronglyNamedAssembly(Type typeFromAssemblyToCheck)
         {
-            Assert.IsNotNull(typeFromAssemblyToCheck, "Cannot determine assembly from null");
-            Assembly assembly = typeFromAssemblyToCheck.Assembly;
-            StringAssert.DoesNotContain("PublicKeyToken=null", assembly.FullName, "Strongly named assembly should have a PublicKeyToken in fully qualified name");
+            Assert.That(typeFromAssemblyToCheck, Is.Not.Null, "Cannot determine assembly from null");
+            var assembly = typeFromAssemblyToCheck.Assembly;
+            Assert.That(assembly.FullName, Does.Not.Contain("PublicKeyToken=null"), "Strongly named assembly should have a PublicKeyToken in fully qualified name");
         }
     }
 }

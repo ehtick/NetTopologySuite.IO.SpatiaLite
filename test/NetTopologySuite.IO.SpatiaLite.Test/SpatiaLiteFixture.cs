@@ -1,6 +1,5 @@
 using System;
 using System.Configuration;
-using System.Data;
 using System.IO;
 using NetTopologySuite.Geometries;
 using NUnit.Framework;
@@ -40,7 +39,7 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
             if (File.Exists(Name))
                 File.Delete(Name);
 
-            using var conn = new SqliteConnection("Data Source=\"" + Name + "\"");
+            using var conn = new SqliteConnection($"Data Source=\"{Name}\"");
             conn.Open();
             conn.EnableExtensions(true);
             SpatialiteLoader.Load(conn);
@@ -67,10 +66,10 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
                     Console.WriteLine(gParsed.AsText());
                     Console.WriteLine("DiscreteHausdorffDistance=" + discreteHausdorffDistance);
                 }
-                Assert.IsTrue(discreteHausdorffDistance < 0.001);
+                Assert.That(discreteHausdorffDistance < 0.001);
             }
             else
-                Assert.IsTrue(false);
+                Assert.That(false);
         }
 
         protected override Geometry Read(byte[] b)
