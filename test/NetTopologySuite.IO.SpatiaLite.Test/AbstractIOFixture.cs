@@ -113,8 +113,9 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
                     throw new InvalidOperationException();
 
                 var oldPM = RandomGeometryHelper.Factory.PrecisionModel;
-                RandomGeometryHelper.Factory = RandomGeometryHelper.Factory is OgcCompliantGeometryFactory
-                    ? new OgcCompliantGeometryFactory(oldPM, value)
+                RandomGeometryHelper.Factory = RandomGeometryHelper.Factory is GeometryFactoryEx
+                    ? new GeometryFactoryEx(oldPM, value) 
+                        { OrientationOfExteriorRing = LinearRingOrientation.CCW }
                     : new GeometryFactory(oldPM, value);
             }
         }
@@ -139,8 +140,9 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
                                      ? factory.CoordinateSequenceFactory
                                      : CoordinateArraySequenceFactory.Instance;
 
-                if (RandomGeometryHelper.Factory is OgcCompliantGeometryFactory)
-                    RandomGeometryHelper.Factory = new OgcCompliantGeometryFactory(value, oldSrid, oldFactory);
+                if (RandomGeometryHelper.Factory is GeometryFactoryEx)
+                    RandomGeometryHelper.Factory = new GeometryFactoryEx(value, oldSrid, oldFactory) 
+                        {OrientationOfExteriorRing = LinearRingOrientation.CCW };
                 else
                     RandomGeometryHelper.Factory = new GeometryFactory(value, oldSrid, oldFactory);
             }
@@ -198,7 +200,7 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
 
         public void PerformTest(Geometry gIn)
         {
-            WKTWriter writer = new WKTWriter(4) { MaxCoordinatesPerLine = 3, };
+            var writer = new WKTWriter(4) { MaxCoordinatesPerLine = 3, };
             byte[] b = null;
             Assert.DoesNotThrow(() => b = Write(gIn), "Threw exception during write:\n{0}", writer.WriteFormatted(gIn));
 

@@ -41,28 +41,25 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
             if (File.Exists(Name))
                 File.Delete(Name);
 
-            using (var conn = new SQLiteConnection($"Data Source=\"{Name}\""))
-            {
-                conn.Open();
-                conn.EnableExtensions(true);
-                SpatialiteLoader.Load(conn);
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText =
-                        "CREATE TABLE \"nts_io_geopackage\" (id int primary key, wkt text, the_geom blob);";
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            using var conn = new SQLiteConnection("Data Source=\"" + Name + "\"");
+            conn.Open();
+            conn.EnableExtensions(true);
+            SpatialiteLoader.Load(conn);
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText =
+                "CREATE TABLE \"nts_io_geopackage\" (\"id\" INTEGER PRIMARY KEY, \"wkt\" TEXT, \"the_geom\" BLOB);";
+            cmd.ExecuteNonQuery();
         }
 
         protected override void CheckEquality(Geometry gIn, Geometry gParsed, WKTWriter writer)
         {
-            var res = gIn.EqualsExact(gParsed);
+            bool res = gIn.EqualsExact(gParsed);
             if (res) return;
 
             if (Compressed)
             {
-                var discreteHausdorffDistance =
+                double discreteHausdorffDistance =
                     Algorithm.Distance.DiscreteHausdorffDistance.Distance(gIn, gParsed);
                 if (discreteHausdorffDistance > 0.05)
                 {

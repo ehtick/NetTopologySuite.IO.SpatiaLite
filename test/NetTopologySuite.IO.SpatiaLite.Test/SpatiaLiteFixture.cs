@@ -47,18 +47,18 @@ namespace NetTopologySuite.IO.SpatiaLite.Test
 
             using var cmd = conn.CreateCommand();
             cmd.CommandText =
-                "CREATE TABLE \"nts_io_spatialite\" (id int primary key, the_geom geometry);";
+                "CREATE TABLE \"nts_io_spatialite\" (\"id\" INTEGER PRIMARY KEY, \"the_geom\" BLOB);";
             cmd.ExecuteNonQuery();
         }
 
         protected override void CheckEquality(Geometry gIn, Geometry gParsed, WKTWriter writer)
         {
-            var res = gIn.EqualsExact(gParsed);
+            bool res = gIn.EqualsExact(gParsed);
             if (res) return;
 
             if (Compressed)
             {
-                var discreteHausdorffDistance =
+                double discreteHausdorffDistance =
                     Algorithm.Distance.DiscreteHausdorffDistance.Distance(gIn, gParsed);
                 if (discreteHausdorffDistance > 0.05)
                 {

@@ -52,20 +52,30 @@ namespace NetTopologySuite.IO
         /// </summary>
         public bool UseCompressed { get; set; }
 
+        /// <summary>
+        /// Writes the provided <paramref name="geometry"/> to the given <paramref name="stream"/>.
+        /// </summary>
+        /// <param name="geometry">A geometry</param>
+        /// <param name="stream">The stream to write to</param>
         public void Write(Geometry geometry, Stream stream)
         {
-            var g = Write(geometry);
+            byte[] g = Write(geometry);
             stream.Write(g, 0, g.Length);
         }
 
-        public byte[] Write(Geometry geom)
+        /// <summary>
+        /// Writes the provided <paramref name="geometry"/> to an array of bytes
+        /// </summary>
+        /// <param name="geometry">A geometry</param>
+        /// <returns>An array of bytes</returns>
+        public byte[] Write(Geometry geometry)
         {
             //if (geom.IsEmpty)
             //    return GaiaGeoEmptyHelper.EmptyGeometryCollectionWithSrid(geom.SRID);
 
-            var ordinates = CheckOrdinates(geom);
-            var hasZ = (ordinates & Ordinates.Z) == Ordinates.Z;
-            var hasM = (ordinates & Ordinates.M) == Ordinates.M;
+            var ordinates = CheckOrdinates(geometry);
+            bool hasZ = (ordinates & Ordinates.Z) == Ordinates.Z;
+            bool hasM = (ordinates & Ordinates.M) == Ordinates.M;
 
             var gaiaExport = SetGaiaGeoExportFunctions(GaiaGeoEndianMarker.GAIA_LITTLE_ENDIAN, hasZ, hasM, UseCompressed);
 
@@ -77,10 +87,10 @@ namespace NetTopologySuite.IO
                     bw.Write((byte)GaiaGeoBlobMark.GAIA_MARK_START);
                     bw.Write((byte)GaiaGeoEndianMarker.GAIA_LITTLE_ENDIAN);
                     //SRID
-                    gaiaExport.WriteInt32(bw, geom.SRID);
+                    gaiaExport.WriteInt32(bw, geometry.SRID);
                     //MBR
-                    var env = geom.EnvelopeInternal; //.Coordinates;
-                    if (geom.IsEmpty)
+                    var env = geometry.EnvelopeInternal; //.Coordinates;
+                    if (geometry.IsEmpty)
                     {
                         gaiaExport.WriteDouble(bw, 0d, 0d, 0d, 0d);
                     }
@@ -92,7 +102,7 @@ namespace NetTopologySuite.IO
                     bw.Write((byte)GaiaGeoBlobMark.GAIA_MARK_MBR);
 
                     //Write geometry
-                    WriteGeometry(geom, gaiaExport, bw);
+                    WriteGeometry(geometry, gaiaExport, bw);
 
                     bw.Write((byte)GaiaGeoBlobMark.GAIA_MARK_END);
                 }
@@ -126,7 +136,7 @@ namespace NetTopologySuite.IO
 
         private static void WriteGeometry(Geometry geom, GaiaExport gaiaExport, BinaryWriter bw)
         {
-            WriteCoordinates writeCoordinates = SetWriteCoordinatesFunction(gaiaExport);
+            var writeCoordinates = SetWriteCoordinatesFunction(gaiaExport);
 
             //Geometry type
             int coordinateFlag = gaiaExport.CoordinateFlag;
@@ -173,7 +183,7 @@ namespace NetTopologySuite.IO
         private static void WriteGeometryCollection(GeometryCollection geom, GaiaExport gaiaExport, BinaryWriter bw)
         {
             gaiaExport.WriteInt32(bw, geom.NumGeometries);
-            for (var i = 0; i < geom.NumGeometries; i++)
+            for (int i = 0; i < geom.NumGeometries; i++)
             {
                 bw.Write((byte)GaiaGeoBlobMark.GAIA_MARK_ENTITY);
                 WriteGeometry(geom[i], gaiaExport, bw);
@@ -183,7 +193,7 @@ namespace NetTopologySuite.IO
         private static void WriteMultiPolygon(GeometryCollection geom, WriteCoordinates writeCoordinates, GaiaExport gaiaExport, BinaryWriter bw)
         {
             gaiaExport.WriteInt32(bw, geom.NumGeometries);
-            for (var i = 0; i < geom.NumGeometries; i++)
+            for (int i = 0; i < geom.NumGeometries; i++)
             {
                 bw.Write((byte)GaiaGeoBlobMark.GAIA_MARK_ENTITY);
                 gaiaExport.WriteInt32(bw, gaiaExport.CoordinateFlag | (int)GaiaGeoGeometry.GAIA_POLYGON);
@@ -194,7 +204,7 @@ namespace NetTopologySuite.IO
         private static void WriteMultiLineString(MultiLineString geom, WriteCoordinates writeCoordinates, GaiaExport gaiaExport, BinaryWriter bw)
         {
             gaiaExport.WriteInt32(bw, geom.NumGeometries);
-            for (var i = 0; i < geom.NumGeometries; i++)
+            for (int i = 0; i < geom.NumGeometries; i++)
             {
                 bw.Write((byte)GaiaGeoBlobMark.GAIA_MARK_ENTITY);
                 gaiaExport.WriteInt32(bw, gaiaExport.CoordinateFlag | (int)GaiaGeoGeometry.GAIA_LINESTRING);
@@ -210,9 +220,9 @@ namespace NetTopologySuite.IO
             wi(bw, geom.NumGeometries);
 
             // get the coordinate flag
-            var coordinateFlag = gaiaExport.CoordinateFlagUncompressed;
+            int coordinateFlag = gaiaExport.CoordinateFlagUncompressed;
 
-            for (var i = 0; i < geom.NumGeometries; i++)
+            for (int i = 0; i < geom.NumGeometries; i++)
             {
                 //write entity begin marker
                 bw.Write((byte)GaiaGeoBlobMark.GAIA_MARK_ENTITY);
@@ -229,7 +239,7 @@ namespace NetTopologySuite.IO
         {
             gaiaExport.WriteInt32(bw, geom.NumInteriorRings + 1);
             WriteLineString(geom.Shell, writeCoordinates, gaiaExport, bw);
-            for (var i = 0; i < geom.NumInteriorRings; i++)
+            for (int i = 0; i < geom.NumInteriorRings; i++)
                 WriteLineString(geom.GetInteriorRingN(i), writeCoordinates, gaiaExport, bw);
         }
 
@@ -247,7 +257,7 @@ namespace NetTopologySuite.IO
 
         private static GaiaExport SetGaiaGeoExportFunctions(GaiaGeoEndianMarker gaiaGeoEndianMarker, bool hasZ, bool hasM, bool useCompression)
         {
-            var conversionNeeded = false;
+            bool conversionNeeded = false;
             switch (gaiaGeoEndianMarker)
             {
                 case GaiaGeoEndianMarker.GAIA_LITTLE_ENDIAN:
@@ -274,7 +284,7 @@ namespace NetTopologySuite.IO
         {
             var wd = export.WriteDouble;
 
-            for (var i = 0; i < coordinateSequence.Count; i++)
+            for (int i = 0; i < coordinateSequence.Count; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
                 wd(bw, c.X, c.Y);
@@ -284,7 +294,7 @@ namespace NetTopologySuite.IO
         private static void WriteXYZ(CoordinateSequence coordinateSequence, GaiaExport export, BinaryWriter bw)
         {
             var wd = export.WriteDouble;
-            for (var i = 0; i < coordinateSequence.Count; i++)
+            for (int i = 0; i < coordinateSequence.Count; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
                 wd(bw, c.X, c.Y, c.Z);
@@ -294,7 +304,7 @@ namespace NetTopologySuite.IO
         private static void WriteXYM(CoordinateSequence coordinateSequence, GaiaExport export, BinaryWriter bw)
         {
             var wd = export.WriteDouble;
-            for (var i = 0; i < coordinateSequence.Count; i++)
+            for (int i = 0; i < coordinateSequence.Count; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
                 wd(bw, c.X, c.Y, coordinateSequence.GetOrdinate(i, Ordinate.M));
@@ -304,7 +314,7 @@ namespace NetTopologySuite.IO
         private static void WriteXYZM(CoordinateSequence coordinateSequence, GaiaExport export, BinaryWriter bw)
         {
             var wd = export.WriteDouble;
-            for (var i = 0; i < coordinateSequence.Count; i++)
+            for (int i = 0; i < coordinateSequence.Count; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
                 wd(bw, c.X, c.Y, c.Z, coordinateSequence.GetOrdinate(i, Ordinate.M));
@@ -320,14 +330,14 @@ namespace NetTopologySuite.IO
             wd(bw, cprev.X, cprev.Y);
 
             var ws = export.WriteSingle;
-            var maxIndex = coordinateSequence.Count - 1;
+            int maxIndex = coordinateSequence.Count - 1;
             if (maxIndex <= 0) return;
 
-            for (var i = 1; i < maxIndex; i++)
+            for (int i = 1; i < maxIndex; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
-                var fx = (float)(c.X - cprev.X);
-                var fy = (float)(c.Y - cprev.Y);
+                float fx = (float)(c.X - cprev.X);
+                float fy = (float)(c.Y - cprev.Y);
                 ws(bw, fx, fy);
                 cprev = c;
             }
@@ -345,16 +355,16 @@ namespace NetTopologySuite.IO
             var cprev = coordinateSequence.GetCoordinate(0);
             wd(bw, cprev.X, cprev.Y, cprev.Z);
 
-            var maxIndex = coordinateSequence.Count - 1;
+            int maxIndex = coordinateSequence.Count - 1;
             if (maxIndex <= 0) return;
 
             var ws = export.WriteSingle;
-            for (var i = 1; i < maxIndex; i++)
+            for (int i = 1; i < maxIndex; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
-                var fx = (float)(c.X - cprev.X);
-                var fy = (float)(c.Y - cprev.Y);
-                var fz = (float)(c.Z - cprev.Z);
+                float fx = (float)(c.X - cprev.X);
+                float fy = (float)(c.Y - cprev.Y);
+                float fz = (float)(c.Z - cprev.Z);
                 ws(bw, fx, fy, fz);
                 cprev = c;
             }
@@ -368,19 +378,19 @@ namespace NetTopologySuite.IO
 
             // Write initial coordinate
             var cprev = coordinateSequence.GetCoordinate(0);
-            var mprev = coordinateSequence.GetOrdinate(0, Ordinate.M);
+            double mprev = coordinateSequence.GetOrdinate(0, Ordinate.M);
             wd(bw, cprev.X, cprev.Y, mprev);
 
-            var maxIndex = coordinateSequence.Count - 1;
+            int maxIndex = coordinateSequence.Count - 1;
             if (maxIndex <= 0) return;
 
             var ws = export.WriteSingle;
-            for (var i = 1; i < maxIndex; i++)
+            for (int i = 1; i < maxIndex; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
-                var fx = (float)(c.X - cprev.X);
-                var fy = (float)(c.Y - cprev.Y);
-                var fm = (float)(coordinateSequence.GetOrdinate(i, Ordinate.M) - mprev);
+                float fx = (float)(c.X - cprev.X);
+                float fy = (float)(c.Y - cprev.Y);
+                float fm = (float)(coordinateSequence.GetOrdinate(i, Ordinate.M) - mprev);
                 ws(bw, fx, fy, fm);
                 cprev = c;
             }
@@ -395,20 +405,20 @@ namespace NetTopologySuite.IO
 
             // Write initial coordinate
             var cprev = coordinateSequence.GetCoordinate(0);
-            var mprev = coordinateSequence.GetOrdinate(0, Ordinate.M);
+            double mprev = coordinateSequence.GetOrdinate(0, Ordinate.M);
             wd(bw, cprev.X, cprev.Y, cprev.Z, mprev);
 
-            var maxIndex = coordinateSequence.Count - 1;
+            int maxIndex = coordinateSequence.Count - 1;
             if (maxIndex <= 0) return;
 
             var ws = export.WriteSingle;
-            for (var i = 1; i < maxIndex; i++)
+            for (int i = 1; i < maxIndex; i++)
             {
                 var c = coordinateSequence.GetCoordinate(i);
-                var fx = (float)(c.X - cprev.X);
-                var fy = (float)(c.Y - cprev.Y);
-                var fz = (float)(c.Z - cprev.Z);
-                var fm = (float)(coordinateSequence.GetOrdinate(i, Ordinate.M) - mprev);
+                float fx = (float)(c.X - cprev.X);
+                float fy = (float)(c.Y - cprev.Y);
+                float fz = (float)(c.Z - cprev.Z);
+                float fm = (float)(coordinateSequence.GetOrdinate(i, Ordinate.M) - mprev);
                 ws(bw, fx, fy, fz, fm);
                 cprev = c;
             }
